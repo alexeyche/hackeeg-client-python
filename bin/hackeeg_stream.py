@@ -78,6 +78,7 @@ class HackEegTestApplication:
         self.stream_id = str(uuid.uuid4())
         self.read_samples_continuously = True
         self.continuous_mode = False
+        self.stream_type = "float32" # default int32 for origin
 
         print(f"platform: {sys.platform}")
         if sys.platform == "linux" or sys.platform == "linux2" or sys.platform == "darwin":
@@ -217,6 +218,9 @@ class HackEegTestApplication:
         parser.add_argument("--quiet", "-q",
                             help=f"quiet mode– do not print sample data (used for performance testing)",
                             action="store_true")
+        parser.add_argument("--stream-type", "-st",
+                            help=f"Stream type, ie channel format",
+                            default=self.stream_type, type=str),
         args = parser.parse_args()
         if args.debug:
             self.debug = True
@@ -231,7 +235,7 @@ class HackEegTestApplication:
             self.lsl = True
             if args.lsl_stream_name:
                 self.lsl_stream_name = args.lsl_stream_name
-            self.lsl_info = StreamInfo(self.lsl_stream_name, 'EEG', self.channels, self.samples_per_second, 'int32',
+            self.lsl_info = StreamInfo(self.lsl_stream_name, 'EEG', self.channels, self.samples_per_second, self.stream_type,
                                        self.stream_id)
             self.lsl_outlet = StreamOutlet(self.lsl_info)
 
@@ -252,14 +256,16 @@ class HackEegTestApplication:
             status_code = result.get(self.hackeeg.MpStatusCodeKey)
             data = result.get(self.hackeeg.MpDataKey)
             samples.append(result)
-            if status_code == Status.Ok and data:
+            if status_code == Status.Ok and data and channel_data:
+                channel_data = result.get('channel_data')
+            
                 if not self.quiet:
                     timestamp = result.get('timestamp')
                     sample_number = result.get('sample_number')
                     ads_gpio = result.get('ads_gpio')
                     loff_statp = result.get('loff_statp')
                     loff_statn = result.get('loff_statn')
-                    channel_data = result.get('channel_data')
+                    
                     data_hex = result.get('data_hex')
                     print(
                         f"timestamp:{timestamp} sample_number: {sample_number}| gpio:{ads_gpio} loff_statp:{loff_statp} loff_statn:{loff_statn}   ",
