@@ -256,7 +256,7 @@ class HackEegTestApplication:
             status_code = result.get(self.hackeeg.MpStatusCodeKey)
             data = result.get(self.hackeeg.MpDataKey)
             samples.append(result)
-            if status_code == Status.Ok and data and channel_data:
+            if status_code == Status.Ok and data:
                 channel_data = result.get('channel_data')
             
                 if not self.quiet:
